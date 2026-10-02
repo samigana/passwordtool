@@ -1,29 +1,4 @@
-#!/usr/bin/env python3
-"""
-password_tool.py
-=================
 
-A secure password generator and password-strength rater.
-
-Two features, one file:
-
-1. GENERATOR
-   Builds a cryptographically secure random password based on user
-   preferences: length, and which character sets to include
-   (lowercase, uppercase, digits, special characters). Uses `secrets`
-   (not `random`) because `random` is predictable and unsafe for
-   anything security-related.
-
-2. STRENGTH RATER
-   Scores an existing password on length and character diversity
-   (a simplified entropy estimate), and prints a colored strength
-   bar plus concrete, actionable feedback.
-
-Run it:
-    python3 password_tool.py
-
-Author: written for Sami's project.
-"""
 
 from __future__ import annotations
 
@@ -40,7 +15,6 @@ try:
     colorama_init(autoreset=True)
     COLOR = True
 except ImportError:
-    # Script still works with no colors if colorama isn't installed.
     COLOR = False
 
     class _NoColor:
@@ -51,11 +25,7 @@ except ImportError:
     Style = _NoColor()
 
 
-# --------------------------------------------------------------------------- #
-# Section 1: Character sets
-# --------------------------------------------------------------------------- #
 
-# Characters that are easy to mis-type or visually confuse (l, 1, I, O, 0...).
 AMBIGUOUS_CHARS = "il1LoO0"
 
 LOWER = string.ascii_lowercase
@@ -64,13 +34,8 @@ DIGITS = string.digits
 SPECIAL = "!@#$%^&*()-_=+[]{};:,.<>?/"
 
 
-# --------------------------------------------------------------------------- #
-# Section 2: Password generation
-# --------------------------------------------------------------------------- #
-
 @dataclass
 class GeneratorOptions:
-    """User preferences for password generation."""
     length: int = 16
     use_lower: bool = True
     use_upper: bool = True
@@ -80,11 +45,7 @@ class GeneratorOptions:
 
 
 def build_character_pool(opts: GeneratorOptions) -> tuple[str, list[str]]:
-    """
-    Build the full pool of allowed characters, plus a list of the
-    individual character-set "required" pools (one per selected
-    category), so we can guarantee at least one char from each.
-    """
+    
     required_pools: list[str] = []
 
     if opts.use_lower:
@@ -110,16 +71,7 @@ def build_character_pool(opts: GeneratorOptions) -> tuple[str, list[str]]:
 
 
 def generate_password(opts: GeneratorOptions) -> str:
-    """
-    Generate a cryptographically secure random password that:
-      - is exactly `opts.length` characters long
-      - contains at least one character from every selected category
-      - is shuffled so required characters aren't predictably placed
-
-    Uses `secrets.choice` / `secrets.SystemRandom` throughout, which
-    pulls from the OS's cryptographically secure random source
-    (os.urandom). Never use the `random` module for passwords.
-    """
+ 
     full_pool, required_pools = build_character_pool(opts)
 
     if opts.length < len(required_pools):
@@ -129,28 +81,20 @@ def generate_password(opts: GeneratorOptions) -> str:
             f"selected character sets."
         )
 
-    # Step 1: guarantee representation from every selected category.
     password_chars = [secrets.choice(pool) for pool in required_pools]
 
-    # Step 2: fill the rest randomly from the combined pool.
     remaining = opts.length - len(password_chars)
     password_chars += [secrets.choice(full_pool) for _ in range(remaining)]
 
-    # Step 3: cryptographically secure shuffle (Fisher-Yates via secrets).
     secrets.SystemRandom().shuffle(password_chars)
 
     return "".join(password_chars)
 
 
-# --------------------------------------------------------------------------- #
-# Section 3: Password strength rating
-# --------------------------------------------------------------------------- #
-
 @dataclass
 class StrengthResult:
-    """Holds the outcome of a strength check, ready to print or reuse."""
     score: int                     # 0-100
-    label: str                     # Very Weak -> Very Strong
+    label: str                     
     entropy_bits: float
     feedback: list[str] = field(default_factory=list)
 
@@ -166,7 +110,6 @@ def _character_pool_size(password: str) -> int:
         pool += len(DIGITS)
     if any(c in SPECIAL for c in password):
         pool += len(SPECIAL)
-    # Catch-all for characters outside the sets above (unicode, spaces, etc).
     others = set(password) - set(LOWER + UPPER + DIGITS + SPECIAL)
     if others:
         pool += len(others)
@@ -174,12 +117,7 @@ def _character_pool_size(password: str) -> int:
 
 
 def estimate_entropy_bits(password: str) -> float:
-    """
-    Rough entropy estimate: log2(pool_size ^ length).
-    This is the standard "brute-force search space" estimate, not a
-    perfect model of human-chosen-password guessability, but it's a
-    solid, explainable number for a diversity+length based score.
-    """
+   
     pool_size = _character_pool_size(password)
     if not password:
         return 0.0
@@ -187,16 +125,7 @@ def estimate_entropy_bits(password: str) -> float:
 
 
 def rate_password(password: str) -> StrengthResult:
-    """
-    Score a password 0-100 based on:
-      - length (longer = better, with diminishing returns past ~20)
-      - character diversity (how many of the 4 categories are used)
-      - entropy (combines both, used as a tiebreaker/sanity check)
-      - simple penalty for obvious weaknesses (repeats, sequences)
-
-    Returns a StrengthResult with a numeric score, a label, the raw
-    entropy estimate, and human-readable feedback for improvement.
-    """
+ 
     feedback: list[str] = []
 
     if not password:
@@ -209,15 +138,12 @@ def rate_password(password: str) -> StrengthResult:
     has_special = any(c in SPECIAL for c in password)
     diversity = sum([has_lower, has_upper, has_digit, has_special])
 
-    # --- Length score (0-40 points) ---
-    # 8 chars = weak baseline, 20+ chars = full marks.
     length_score = min(40, (length / 20) * 40)
     if length < 8:
         feedback.append("Too short: use at least 8 characters (12+ recommended).")
     elif length < 12:
         feedback.append("Consider a longer password (12+ characters) for extra safety.")
 
-    # --- Diversity score (0-40 points, 10 per category) ---
     diversity_score = diversity * 10
     if not has_lower:
         feedback.append("Add lowercase letters.")
@@ -228,22 +154,17 @@ def rate_password(password: str) -> StrengthResult:
     if not has_special:
         feedback.append(f"Add special characters (e.g. {SPECIAL[:8]}...).")
 
-    # --- Entropy score (0-20 points) ---
-    # 80+ bits is considered strong for most purposes.
     entropy_bits = estimate_entropy_bits(password)
     entropy_score = min(20, (entropy_bits / 80) * 20)
 
-    # --- Penalties ---
     penalty = 0
     lowered = password.lower()
 
-    # Repeated character runs, e.g. "aaaa".
     if any(password[i] == password[i + 1] == password[i + 2]
            for i in range(len(password) - 2)):
         penalty += 10
         feedback.append("Avoid repeating the same character 3+ times in a row.")
 
-    # Simple ascending/descending sequences, e.g. "abcd" or "1234".
     sequences = ["abcdefghijklmnopqrstuvwxyz", "0123456789"]
     for seq in sequences:
         for i in range(len(seq) - 3):
@@ -253,7 +174,6 @@ def rate_password(password: str) -> StrengthResult:
                 feedback.append("Avoid simple sequences like 'abcd' or '1234'.")
                 break
 
-    # Common weak passwords / substrings.
     common_weak = {"password", "qwerty", "letmein", "admin", "welcome", "azerty"}
     if any(weak in lowered for weak in common_weak):
         penalty += 20
@@ -279,10 +199,6 @@ def rate_password(password: str) -> StrengthResult:
     return StrengthResult(score, label, entropy_bits, feedback)
 
 
-# --------------------------------------------------------------------------- #
-# Section 4: Visual output ("see the code / result with the eye")
-# --------------------------------------------------------------------------- #
-
 def _color_for_score(score: int) -> str:
     if score >= 90:
         return Fore.CYAN
@@ -296,7 +212,6 @@ def _color_for_score(score: int) -> str:
 
 
 def render_strength_bar(score: int, width: int = 30) -> str:
-    """Render a colored ASCII bar like: [██████████░░░░░░░░░░]  35%"""
     filled = round((score / 100) * width)
     empty = width - filled
     color = _color_for_score(score)
@@ -333,10 +248,6 @@ def print_rating(password: str) -> None:
         print(f"    {Fore.YELLOW}-{Style.RESET_ALL} {line}")
     print()
 
-
-# --------------------------------------------------------------------------- #
-# Section 5: Interactive CLI menu
-# --------------------------------------------------------------------------- #
 
 def ask_yes_no(prompt: str, default: bool = True) -> bool:
     suffix = " [Y/n] " if default else " [y/N] "
@@ -412,10 +323,6 @@ def interactive_menu() -> None:
             print(f"{Fore.RED}Invalid choice, try again.{Style.RESET_ALL}")
 
 
-# --------------------------------------------------------------------------- #
-# Section 6: Command-line (non-interactive) mode
-# --------------------------------------------------------------------------- #
-
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Generate a secure password or rate one you already have."
@@ -460,7 +367,6 @@ def main() -> None:
         print_rating(args.password)
 
     else:
-        # No subcommand given -> friendly interactive menu.
         interactive_menu()
 
 
