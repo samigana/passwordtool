@@ -1,19 +1,12 @@
-/* ==========================================================
-   Password Tool — styles
-   Simple, modern, minimal. No frameworks, no heavy animation.
-   ========================================================== */
-
 :root {
-  /* Color palette (change these to re-theme the whole page) */
   --color-bg: #f5f6fa;
   --color-card: #ffffff;
   --color-text: #1f2430;
   --color-text-muted: #6b7280;
-  --color-accent: #4f46e5;      /* indigo — buttons, focus rings */
+  --color-accent: #4f46e5;      
   --color-accent-hover: #4338ca;
   --color-border: #e5e7eb;
 
-  /* Strength colors, used by JavaScript to color the bar */
   --color-weak: #ef4444;
   --color-moderate: #f59e0b;
   --color-strong: #22c55e;
@@ -34,7 +27,6 @@ body {
   line-height: 1.5;
 }
 
-/* ---------- Header / Footer ---------- */
 
 .page-header {
   text-align: center;
@@ -58,7 +50,6 @@ body {
   padding: 30px 20px 50px;
 }
 
-/* ---------- Layout ---------- */
 
 .container {
   max-width: 720px;
@@ -81,7 +72,6 @@ body {
   font-size: 1.15rem;
 }
 
-/* ---------- Form elements ---------- */
 
 .field {
   margin-bottom: 16px;
@@ -128,7 +118,6 @@ input[type="password"]:focus {
   font-size: 0.9rem;
 }
 
-/* ---------- Buttons ---------- */
 
 .btn-primary {
   background-color: var(--color-accent);
@@ -160,7 +149,6 @@ input[type="password"]:focus {
   background-color: var(--color-border);
 }
 
-/* ---------- Result area ---------- */
 
 .result {
   margin-top: 20px;
@@ -190,7 +178,6 @@ input[type="password"]:focus {
   flex: 1;
 }
 
-/* ---------- Strength bar (the page's signature element) ---------- */
 
 .strength {
   margin-top: 16px;
@@ -206,7 +193,7 @@ input[type="password"]:focus {
 
 .strength-bar-fill {
   height: 100%;
-  width: 0%; /* set dynamically by script.js */
+  width: 0%; 
   border-radius: 999px;
   transition: width 0.3s ease, background-color 0.3s ease;
 }
@@ -219,7 +206,6 @@ input[type="password"]:focus {
   color: var(--color-text-muted);
 }
 
-/* ---------- Feedback list ---------- */
 
 .feedback-list {
   margin: 16px 0 0;
@@ -232,7 +218,6 @@ input[type="password"]:focus {
   margin-bottom: 4px;
 }
 
-/* ---------- Error message ---------- */
 
 .error {
   color: var(--color-weak);
@@ -240,7 +225,6 @@ input[type="password"]:focus {
   margin-top: 12px;
 }
 
-/* ---------- Responsive ---------- */
 
 @media (max-width: 480px) {
   .checkbox-grid {
